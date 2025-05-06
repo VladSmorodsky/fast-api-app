@@ -1,10 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from passlib.context import CryptContext
+from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.exc import IntegrityError
 
-from app.models import User
+from app.background_tasks import send_register_email
 from app.users.auth import create_access_token
 from app.users.crud import create_user, get_user_by_creds
 from app.users.schemas import UserCreate, UserResponse, ResponseUserCreate, UserLogin, ResponseUserLogin
@@ -14,9 +11,11 @@ router = APIRouter()
 
 
 @router.post("/register", status_code=status.HTTP_201_CREATED)
-async def register_user(user_body: UserCreate, db: AsyncSession = Depends(get_db)) -> ResponseUserCreate:
+async def register_user(user_body: UserCreate, background_task: BackgroundTasks,
+                        db: AsyncSession = Depends(get_db)) -> ResponseUserCreate:
     try:
         user = await create_user(db, user_body)
+        background_task.add_task(send_register_email, user.email)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
