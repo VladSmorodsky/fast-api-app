@@ -1,5 +1,4 @@
 from datetime import datetime, timedelta
-from email.policy import default
 
 from passlib.context import CryptContext
 from jose import jwt, JWTError
@@ -25,8 +24,8 @@ def get_token_payload(token: str = Depends(oauth2_scheme)) -> TokenPayload:
     """
     try:
         payload = decode_access_token(token)
-    except JWTError as e:
-        print(e)
+    except JWTError as error:
+        print("Authentication Error:", error)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Could not validate credentials",

@@ -25,7 +25,7 @@ async def ws_chat(websocket: WebSocket, chat_id: int, db: AsyncSession = Depends
     if user is None:
         await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
         return
-    chat = await get_chat_by_id(db, chat_id)
+    chat = await get_chat_by_id(db, chat_id, token_payload.id)
     if chat is None:
         await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
         return

@@ -7,10 +7,11 @@ from email_validator import (
     validate_email,
     EmailNotValidError,
 )
+from fastapi import Depends, HTTPException, status
 
 from app.models import User
-from app.users.schemas import UserCreate
-from app.users.auth import hash_password, verify_password
+from app.users.schemas import UserCreate, TokenPayload
+from app.users.auth import hash_password, verify_password, get_token_payload
 
 
 async def create_user(db: AsyncSession, user_body: UserCreate) -> User | None:
@@ -61,3 +62,9 @@ async def get_user_by_id(db: AsyncSession, user_id: int) -> User | None:
     result = await db.execute(select(User).where(User.id == user_id))
     user = result.scalar_one_or_none()
     return user
+
+
+async def is_auth_user(db: AsyncSession, payload: TokenPayload = Depends(get_token_payload)):
+    authenticated_user = await get_user_by_id(db, payload.id)
+    if not authenticated_user:
+        raise HTTPException(status_code=404, detail="User not found")
